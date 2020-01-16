@@ -122,7 +122,7 @@ class MainWindow(QMainWindow):
             fname, _ = QFileDialog.getOpenFileName(self, 'Open file', \
                 'path/to/file',"Image files (*.png)")
         else:
-            fname = 'D:/Bureau/Fablab/imagePlaceholder.png'
+            fname = '../imagePlaceholder.png'
 
         img = Image(file = fname)
 
@@ -166,10 +166,8 @@ class MainWindow(QMainWindow):
         label.setPixmap(QPixmap(QImg))
 
 def main():
-    # f_dxf.fillDXF(list)
-
     app = QApplication(sys.argv)
-    window = MainWindow('MakerSpace Tools Analysis')
+    window = MainWindow('MakerSpace Tools Extraction')
     window.show()
     app.exec()
 

@@ -7,6 +7,8 @@ class File():
         self.path = path
 
     def toDXF(self, foldername = 'DXFs'):
+        #print(os.split(self.path))
+
         name = self.path.replace('\\','/').split('/')
         name[-1] = name[-1].replace('png', 'dxf')
         name[-2] = foldername

@@ -7,7 +7,7 @@ from os import path
 
 from math import atan2, pi
 
-from GeometricClass import Point, Line
+from GeometricClass import Point, Line, rotate
 from FileClass import File
 
 class Image:
@@ -136,7 +136,9 @@ class Image:
         list = list * scale
 
         mo2 = stats.moment(list, moment = 2)
-        angle = atan2(mo2[1], mo2[0]) * 180 / pi
+        angle = atan2(mo2[1], mo2[0]) # prendre en compte toute la pièce
+
+        list = rotate(Point(0,0), list, angle)
 
         list[:,0] = savgol_filter(list[:,0], 9, 2)
         list[:,1] = savgol_filter(list[:,1], 9, 2)

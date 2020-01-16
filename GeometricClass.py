@@ -12,8 +12,14 @@ class Point(Sequence):
     def __sub__(self, other):
         return Point(self.x - other.x, self.y - other.y)
 
-    def __getitem__(self, u):
-        return [self.x, self.y][u]
+    def __getitem__(self, other):
+        return [self.x, self.y][other]
+
+    def __eq__(self, other):
+        if isinstance(other, Point):
+            return self.x == other.x and self.y == other.y
+        else:
+            return NotImplemented
 
     def __len__(self):
         return 2
@@ -32,6 +38,7 @@ class Point(Sequence):
 
     def round(self):
         return Point(int(self.x), int(self.y))
+
 
 class Line:
     def __init__(self, p = Point(0,0), q = Point(0,0)):
@@ -78,3 +85,15 @@ class Line:
         assert(isinstance(p,Point))
         self.p = self.p + p
         self.q = self.q + p
+
+
+
+def rotate(p0, list, angle):
+    assert(isinstance(p0,Point))
+    for x in range(0,len(list)):
+        px, py = list[x,:]
+
+        list[x,0] = p0.x + cos(angle) * (px-p0.x) - sin(angle) * (py - p0.y)
+        list[x,1] = p0.y + sin(angle) * (px-p0.x) + cos(angle) * (py - p0.y)
+
+    return list
