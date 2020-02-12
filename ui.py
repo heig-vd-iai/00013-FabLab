@@ -1,7 +1,7 @@
 from image import Image
 from geometry import Point, Line
 from file import File
-from ui import Ui_MainWindow
+from main_window import Ui_MainWindow
 from PyQt5.QtWidgets import QMainWindow, QFileDialog
 from PyQt5.QtGui import QPixmap, QImage
 from PyQt5.QtCore import Qt
@@ -37,7 +37,7 @@ class Main(QMainWindow):
         self.ui.analysis_load.clicked.connect(self.getAnalysisImage)
         self.ui.get_tform.clicked.connect(self.getTForm)
         self.ui.analyse.clicked.connect(self.analyseImage)
-        self.ui.export_button.clicked.connect(self.exportToDXF)
+        self.ui.export_button.clicked.connect(self.exportto_dxf)
 
     def getCalibrationImage(self):
         try:
@@ -98,7 +98,7 @@ class Main(QMainWindow):
 
     def analyseImage(self):
         self.list, img = self.img.image2list(
-            self.tform, self.corners, MainWindow.scale)
+            self.tform, self.corners, Main.scale)
 
         w, h = img.width, img.height
         QImg = QImage(img.data.data, w, h, w, QImage.Format_Indexed8)
@@ -112,9 +112,9 @@ class Main(QMainWindow):
         self.ui.analysis_result.setText('#px: {}'.format(len(self.list)))
         self.ui.export_button.setEnabled(True)
 
-    def exportToDXF(self):
-        f_dxf = self.img.file.toDXF()
-        f_dxf.fillDXF(self.list)
+    def exportto_dxf(self):
+        f_dxf = self.img.file.to_dxf()
+        f_dxf.fill(self.list)
 
     def resetQPixamp(self, label):
         QImg, _ = self.getQPixmap(False)

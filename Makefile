@@ -1,5 +1,7 @@
-build:
-	pyuic5 main-window.ui -o main-window.py
+build: main_window.py
+
+%.py: %.ui
+	pyuic5 $< -o $@
 
 clean:
-	$(RM) main-window.py
+	$(RM) main_window.py
