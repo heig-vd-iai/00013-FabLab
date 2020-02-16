@@ -22,16 +22,16 @@ thickness = 10
 
 def order_points(points, angle=0):
     centroid = Point(
-        sum([p.x for p in intersections]) / len(intersections),
-        sum([p.y for p in intersections]) / len(intersections)
+        sum([p.x for p in points]) / len(points),
+        sum([p.y for p in points]) / len(points)
     )
 
-    return [l.p for l in sorted([Line(p, centroid) for p in intersections], key=lambda l: ((l.theta - angle) % (2 * math.pi) , l.length))]
+    return [l.p for l in sorted([Line(p, centroid) for p in points], key=lambda l: ((l.theta - angle) % (2 * math.pi) , l.length))]
 
 def four_point_transform(image, pts):
 	# obtain a consistent order of the points and unpack them
 	# individually
-    rect = np.float32([list(p) for p in order_points(intersections)])
+    rect = np.float32([list(p) for p in order_points(pts)])
     print(rect)
     x, y = np.int32(np.array(lightbox_size) * dpi / 25.4)
     dst = np.array([[0, 0], [x, 0], [x, y], [0, y]], dtype = "float32")
@@ -84,17 +84,23 @@ def to_svg(filename, contour, width=lightbox_size[0], height=lightbox_size[1]):
     )
     f.close()
 
-for i, filename in enumerate(glob.glob("../Images/*.JPG")):
+def process(filename):
+    global lines
+
     filename = Path(filename)
-    # filename = 'tests/hammer.jpg'
-    # i = 0
+    assert(filename.exists())
 
     im = cv.imread(str(filename))
     imgray = cv.imread(str(filename), cv.IMREAD_GRAYSCALE)
-    dst = cv.Canny(imgray, 50, 200, None, 3)
 
-    lines = cv.HoughLines(dst, 1, np.pi / 180, 150, None, 0, 0)
-    cdst = cv.cvtColor(dst, cv.COLOR_GRAY2BGR)
+    _, im3 = cv.threshold(imgray, 127, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+    contours, hierarchy = cv.findContours(im3, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=lambda x: cv.contourArea(x), reverse=True)
+
+    u = np.zeros(imgray.shape, np.uint8)
+    cv.drawContours(u, contours, 0, 255, 1)
+
+    lines = cv.HoughLines(u, 1, np.pi / 180, 150, None, 0, 0)
 
     border = []
     for ((rho, theta),) in lines[:4]:
@@ -103,6 +109,9 @@ for i, filename in enumerate(glob.glob("../Images/*.JPG")):
         p = Point(x0 + 10000*(-y), y0 + 10000*x)
         q = Point(x0 - 10000*(-y), y0 - 10000*x)
         border.append(Line(p, q))
+
+    for line in border:
+        cv.line(im, tuple(line.p.round()), tuple(line.q.round()), red, thickness)
 
     intersections = [u.intersection(v) for u, v in combinations(border, 2)]
     intersections = [u for u in intersections if u is not None]
@@ -113,11 +122,11 @@ for i, filename in enumerate(glob.glob("../Images/*.JPG")):
 
     lines = sorted([Line(u, v) for u, v in combinations(intersections, 2)], key=lambda x: x.length)[:-2]
 
-    # for line in lines:
-    #     cv.line(im, tuple(line.p), tuple(line.q), red, thickness)
+    for line in lines:
+        cv.line(im, tuple(line.p), tuple(line.q), red, thickness)
 
-    # plt.imshow(im, extent=[0,lightbox_size[0],0,lightbox_size[1]])
-    # plt.show()
+    plt.imshow(im, extent=[0,lightbox_size[0],0,lightbox_size[1]])
+    plt.show()
 
     im2 = four_point_transform(imgray, intersections)
     im = four_point_transform(im, intersections)
@@ -133,7 +142,7 @@ for i, filename in enumerate(glob.glob("../Images/*.JPG")):
 
     cv.drawContours(u, contours, 1, 0, -1)
 
-    u = iopen(u, int(5 * dpi / 25.4)) # In mm
+    #u = iopen(u, int(5 * dpi / 25.4)) # In mm
 
     contours, hierarchy = cv.findContours(u, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=lambda x: cv.contourArea(x), reverse=True)
@@ -143,9 +152,14 @@ for i, filename in enumerate(glob.glob("../Images/*.JPG")):
 
     cv.drawContours(im, contours, 1, red, 10)
 
-    # plt.imshow(im)
-    # plt.show()
+    plt.imshow(im)
+    plt.show()
 
+process('tests/hex.jpg')
+
+# for i, filename in enumerate(glob.glob("../Images/*.JPG")):
+#     filename = Path(filename)
+#     process(filename)
 
 
 # m = four_point_transform(im, intersections)
