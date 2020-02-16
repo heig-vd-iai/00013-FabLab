@@ -9,6 +9,7 @@ from os import listdir
 from os.path import isfile, join
 import glob
 from PIL import Image
+from pathlib import Path
 
 lightbox_size = [429, 349] # mm
 dpi = 150
@@ -83,72 +84,68 @@ def to_svg(filename, contour, width=lightbox_size[0], height=lightbox_size[1]):
     )
     f.close()
 
-#for i, filename in enumerate(glob.glob("../Images/*.JPG")):
-filename = 'tests/hammer.jpg'
-i = 0
+for i, filename in enumerate(glob.glob("../Images/*.JPG")):
+    filename = Path(filename)
+    # filename = 'tests/hammer.jpg'
+    # i = 0
 
-im = cv.imread(filename)
-imgray = cv.imread(filename, cv.IMREAD_GRAYSCALE)
-dst = cv.Canny(imgray, 50, 200, None, 3)
+    im = cv.imread(str(filename))
+    imgray = cv.imread(str(filename), cv.IMREAD_GRAYSCALE)
+    dst = cv.Canny(imgray, 50, 200, None, 3)
 
-lines = cv.HoughLines(dst, 1, np.pi / 180, 150, None, 0, 0)
-cdst = cv.cvtColor(dst, cv.COLOR_GRAY2BGR)
+    lines = cv.HoughLines(dst, 1, np.pi / 180, 150, None, 0, 0)
+    cdst = cv.cvtColor(dst, cv.COLOR_GRAY2BGR)
 
-border = []
-for ((rho, theta),) in lines[:4]:
-    x, y = math.cos(theta), math.sin(theta)
-    x0, y0 = x * rho, y * rho
-    p = Point(x0 + 10000*(-y), y0 + 10000*x)
-    q = Point(x0 - 10000*(-y), y0 - 10000*x)
-    border.append(Line(p, q))
+    border = []
+    for ((rho, theta),) in lines[:4]:
+        x, y = math.cos(theta), math.sin(theta)
+        x0, y0 = x * rho, y * rho
+        p = Point(x0 + 10000*(-y), y0 + 10000*x)
+        q = Point(x0 - 10000*(-y), y0 - 10000*x)
+        border.append(Line(p, q))
 
-intersections = [u.intersection(v) for u, v in combinations(border, 2)]
-intersections = [u for u in intersections if u is not None]
-intersections = [Point(int(x), int(y)) for x, y in intersections if y < im.shape[0] and x < im.shape[1]]
+    intersections = [u.intersection(v) for u, v in combinations(border, 2)]
+    intersections = [u for u in intersections if u is not None]
+    intersections = [Point(int(x), int(y)) for x, y in intersections if y < im.shape[0] and x < im.shape[1]]
 
-for p in intersections:
-    cv.circle(im, tuple(p), 50, green, thickness)
+    for p in intersections:
+        cv.circle(im, tuple(p), 50, green, thickness)
 
-lines = sorted([Line(u, v) for u, v in combinations(intersections, 2)], key=lambda x: x.length)[:-2]
+    lines = sorted([Line(u, v) for u, v in combinations(intersections, 2)], key=lambda x: x.length)[:-2]
 
-# for line in lines:
-#     cv.line(im, tuple(line.p), tuple(line.q), red, thickness)
+    # for line in lines:
+    #     cv.line(im, tuple(line.p), tuple(line.q), red, thickness)
 
-# plt.imshow(im, extent=[0,lightbox_size[0],0,lightbox_size[1]])
-# plt.show()
+    # plt.imshow(im, extent=[0,lightbox_size[0],0,lightbox_size[1]])
+    # plt.show()
 
-im2 = four_point_transform(imgray, intersections)
-im = four_point_transform(im, intersections)
+    im2 = four_point_transform(imgray, intersections)
+    im = four_point_transform(im, intersections)
 
-trim(im2, 10, color=255)
+    trim(im2, 10, color=255)
 
-_, im3 = cv.threshold(im2, 127, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
+    _, im3 = cv.threshold(im2, 127, 255, cv.THRESH_BINARY + cv.THRESH_OTSU)
 
-contours, hierarchy = cv.findContours(im3, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-contours = sorted(contours, key=lambda x: cv.contourArea(x), reverse=True)
+    contours, hierarchy = cv.findContours(im3, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=lambda x: cv.contourArea(x), reverse=True)
 
-u = np.ones(im3.shape, np.uint8)*255
+    u = np.ones(im3.shape, np.uint8)*255
 
-cv.drawContours(u, contours, 1, 0, -1)
+    cv.drawContours(u, contours, 1, 0, -1)
 
-u = iopen(u, int(5 * dpi / 25.4)) # In mm
+    u = iopen(u, int(5 * dpi / 25.4)) # In mm
 
-contours, hierarchy = cv.findContours(u, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-contours = sorted(contours, key=lambda x: cv.contourArea(x), reverse=True)
+    contours, hierarchy = cv.findContours(u, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=lambda x: cv.contourArea(x), reverse=True)
 
-if len(contours) > 1:
-    to_svg(f'output/{i}.svg', contours[1])
+    if len(contours) > 1:
+        to_svg(Path('output').joinpath(filename.stem + '.svg'), contours[1])
 
+    cv.drawContours(im, contours, 1, red, 10)
 
-cv.drawContours(im, contours, 1, red, 10)
+    # plt.imshow(im)
+    # plt.show()
 
-plt.imshow(im)
-plt.show()
-
-
-
-# if len(contours) > 1:
-#     to_svg(f'output/{i}.svg', contours[1])
 
 
 # m = four_point_transform(im, intersections)
@@ -172,17 +169,17 @@ plt.show()
 # box = np.int0(box)
 # cv.drawContours(cc,[box],0,green,thickness)
 
-cim = cv.cvtColor(u, cv.COLOR_BGR2RGB)
-cc = contours[1]
-rows,cols = u.shape[:2]
-[vx,vy,x,y] = cv.fitLine(cc, cv.DIST_L2,0,0.01,0.01)
-lefty = int((-x*vy/vx) + y)
-righty = int(((cols-x)*vy/vx)+y)
-cv.line(cim,(cols-1,righty),(0,lefty),(0,255,123),2)
+# cim = cv.cvtColor(u, cv.COLOR_BGR2RGB)
+# cc = contours[1]
+# rows,cols = u.shape[:2]
+# [vx,vy,x,y] = cv.fitLine(cc, cv.DIST_L2,0,0.01,0.01)
+# lefty = int((-x*vy/vx) + y)
+# righty = int(((cols-x)*vy/vx)+y)
+# cv.line(cim,(cols-1,righty),(0,lefty),(0,255,123),2)
 
 
-plt.imshow(cim, extent=[0,lightbox_size[0],0,lightbox_size[1]])
-plt.show()
+# plt.imshow(cim, extent=[0,lightbox_size[0],0,lightbox_size[1]])
+# plt.show()
 
 
 # im = Image.fromarray(cim)
