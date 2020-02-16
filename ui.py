@@ -73,7 +73,7 @@ class Main(QMainWindow):
     def getQPixmap(self, fromBrowser=True):
         if fromBrowser:
             fname, _ = QFileDialog.getOpenFileName(self, 'Open file',
-                                                   'path/to/file', "Image files (*.png)")
+                                                   'path/to/file', "Image files (*.png, *.jpg)")
         else:
             fname = '../imagePlaceholder.png'
 
@@ -87,14 +87,10 @@ class Main(QMainWindow):
     def getTForm(self):
         assert(isinstance(self.ref, Image))
 
-        try:
-            self.tform, self.corners = self.ref.image2tform(Point(2200, 1800))
-        except:
-            self.ui.cali_tform_success.setText('tform: error occured')
-            self.ui.cali_tform_success.setStyleSheet('color: red')
-        else:
-            self.ui.cali_tform_success.setText('tform: computed')
-            self.ui.cali_tform_success.setStyleSheet('color: green')
+        self.tform, self.corners = self.ref.image2tform(Point(2200, 1800))
+
+        self.ui.cali_tform_success.setText('tform: computed')
+        self.ui.cali_tform_success.setStyleSheet('color: green')
 
     def analyseImage(self):
         self.list, img = self.img.image2list(

@@ -40,7 +40,6 @@ class Point(Sequence):
     def round(self):
         return Point(int(self.x), int(self.y))
 
-
 class Line:
     def __init__(self, p=Point(0, 0), q=Point(0, 0)):
         assert(isinstance(p, Point))
@@ -61,6 +60,10 @@ class Line:
         return atan2(self.q.y - self.p.y, self.q.x - self.p.x) % pi
 
     @property
+    def theta(self):
+        return atan2(self.q.y - self.p.y, self.q.x - self.p.x)
+
+    @property
     def a(self):
         return sin(self.angle)
 
@@ -76,11 +79,10 @@ class Line:
         den_x = other.a * self.b - other.b * self.a
         den_y = self.a * other.b - other.a * self.b
 
-        assert(den_x and den_y)
         return Point(
             x=(other.b * self.c - self.b * other.c) / den_x,
             y=(other.a * self.c - self.a * other.c) / den_y
-        )
+        ) if den_x != 0 and den_y != 0 else None
 
     def offsetLine(self, p):
         assert(isinstance(p, Point))
